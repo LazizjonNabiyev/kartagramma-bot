@@ -149,7 +149,7 @@ async def process_age(message: Message, state: FSMContext):
         f"━━━━━━━━━━━━━━━━━━━\n"
         f"👤 Ism: <b>{full_name}</b>\n"
         f"🎂 Yosh: <b>{age}</b>\n"
-        f"📱 Username: @{message.from_user.username or 'yo\'q'}\n"
+        f"📱 Username: @{message.from_user.username or 'yoq'}\n"
         f"━━━━━━━━━━━━━━━━━━━\n\n"
         f"🚀 Endi botdan to'liq foydalanishingiz mumkin!\n"
         f"⭐️ <b>Premium</b> olish uchun Premium tugmasini bosing.",
@@ -187,7 +187,7 @@ async def show_profile(message: Message):
         f"━━━━━━━━━━━━━━━━━━━\n"
         f"📛 Ism: <b>{user.get('full_name', '—')}</b>\n"
         f"🎂 Yosh: <b>{user.get('age', '—')}</b>\n"
-        f"📱 Username: @{message.from_user.username or 'yo\'q'}\n"
+        f"📱 Username: @{message.from_user.username or 'yoq'}\n"
         f"🆔 ID: <code>{message.from_user.id}</code>\n"
         f"📅 Qo'shilgan: <b>{joined}</b>"
         f"{premium_text}\n"
