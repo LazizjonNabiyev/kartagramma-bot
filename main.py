@@ -112,7 +112,7 @@ async def info_menu(message: Message):
         "📌 <b>Funksiyalar:</b>\n"
         "• 🗺 Yo'l topish\n• 📍 Eng yaqin bekat\n"
         "• 🔔 Eslatma\n• ⭐️ Premium\n\n"
-        "👨‍💻 @kartagramma_admin",
+        "👨‍💻 @Technologeee",
         reply_markup=main_menu_kb(), parse_mode="HTML"
     )
 
