@@ -2,34 +2,74 @@ import random
 import math
 from cities import CITIES, city_has_metro
 
-# Toshkent metro grafigi (real liniyalar)
-METRO_GRAPH = {
-    # 1-liniya: Chilonzor liniyasi
-    "Oybek": {"Pakhtakor": 2, "Kosmonavtlar": 3},
-    "Pakhtakor": {"Oybek": 2, "Hamza": 2},
-    "Hamza": {"Pakhtakor": 2, "Beruniy": 3},
-    "Beruniy": {"Hamza": 3, "Mirzo Ulug'bek": 3},
-    "Mirzo Ulug'bek": {"Beruniy": 3, "Chilonzor": 3},
-    "Chilonzor": {"Mirzo Ulug'bek": 3},
+# Narx (2024 yil hozirgi narx)
+METRO_PRICE = 1700
+BUS_PRICE = 1700
+MARSHRUTKA_PRICE = 2000
 
-    # 2-liniya: O'zbekiston liniyasi
-    "Kosmonavtlar": {"Oybek": 3, "Milliy Bog'": 3},
-    "Milliy Bog'": {"Kosmonavtlar": 3, "Bunyodkor": 4},
-    "Bunyodkor": {"Milliy Bog'": 4, "Novza": 3},
-    "Novza": {"Bunyodkor": 3},
+# Toshkent metro grafigi — real liniyalar, real vaqtlar (daqiqa)
+METRO_GRAPH = {
+    # 1-liniya: Chilonzor liniyasi (G'arb-Sharq)
+    "Chilonzor":        {"Mirzo Ulugbek": 3},
+    "Mirzo Ulugbek":    {"Chilonzor": 3, "Beruniy": 3},
+    "Beruniy":          {"Mirzo Ulugbek": 3, "Hamza": 3},
+    "Hamza":            {"Beruniy": 3, "Pakhtakor": 2},
+    "Pakhtakor":        {"Hamza": 2, "Oybek": 2},
+    "Oybek":            {"Pakhtakor": 2, "Kosmonavtlar": 3, "Amir Temur Xiyoboni": 2},
+
+    # 2-liniya: O'zbekiston liniyasi (Shimol-Janub)
+    "Kosmonavtlar":     {"Oybek": 3, "Milliy Bog": 3},
+    "Milliy Bog":       {"Kosmonavtlar": 3, "Bunyodkor": 3},
+    "Bunyodkor":        {"Milliy Bog": 3, "Novza": 3},
+    "Novza":            {"Bunyodkor": 3},
 
     # 3-liniya: Yunusobod liniyasi
-    "Amir Temur Xiyoboni": {"Pushkin": 3, "Mustaqillik": 3},
-    "Pushkin": {"Amir Temur Xiyoboni": 3},
-    "Mustaqillik": {"Amir Temur Xiyoboni": 3, "Yunusobod": 4},
-    "Yunusobod": {"Mustaqillik": 4},
+    "Amir Temur Xiyoboni": {"Oybek": 2, "Pushkin": 3, "Mustaqillik": 3},
+    "Pushkin":          {"Amir Temur Xiyoboni": 3},
+    "Mustaqillik":      {"Amir Temur Xiyoboni": 3, "Yunusobod": 3},
+    "Yunusobod":        {"Mustaqillik": 3},
 }
+
+# Bekat nomlarini normallashtirish (foydalanuvchi xato yozsa ham topadi)
+STOP_ALIASES = {
+    "yunusobod": "Yunusobod",
+    "chilonzor": "Chilonzor",
+    "oybek": "Oybek",
+    "pakhtakor": "Pakhtakor",
+    "hamza": "Hamza",
+    "beruniy": "Beruniy",
+    "mirzo ulugbek": "Mirzo Ulugbek",
+    "mirzo ulug'bek": "Mirzo Ulugbek",
+    "kosmonavtlar": "Kosmonavtlar",
+    "milliy bog": "Milliy Bog",
+    "milliy bog'": "Milliy Bog",
+    "bunyodkor": "Bunyodkor",
+    "novza": "Novza",
+    "amir temur": "Amir Temur Xiyoboni",
+    "amir temur xiyoboni": "Amir Temur Xiyoboni",
+    "pushkin": "Pushkin",
+    "mustaqillik": "Mustaqillik",
+    "sergeli": "Sergeli",
+    "chorsu": "Chorsu",
+    "shayhontohur": "Shayhontohur",
+}
+
+
+def normalize_stop(name):
+    """Bekat nomini normallashtirish"""
+    return STOP_ALIASES.get(name.lower().strip(), name.strip())
 
 
 def find_metro_path(from_stop, to_stop):
     """BFS orqali metro yo'lini topish"""
+    from_stop = normalize_stop(from_stop)
+    to_stop = normalize_stop(to_stop)
+
     if from_stop not in METRO_GRAPH or to_stop not in METRO_GRAPH:
         return None, 0
+
+    if from_stop == to_stop:
+        return [from_stop], 0
 
     visited = {from_stop: None}
     queue = [from_stop]
@@ -38,7 +78,6 @@ def find_metro_path(from_stop, to_stop):
     while queue:
         current = queue.pop(0)
         if current == to_stop:
-            # Yo'lni qayta tiklash
             path = []
             node = to_stop
             while node is not None:
@@ -63,31 +102,23 @@ def find_bus_route(city, from_stop, to_stop):
         return None, 0, None
 
     bus_routes = city_data.get("bus_routes", {})
+    from_n = normalize_stop(from_stop)
+    to_n = normalize_stop(to_stop)
 
     for route_num, stops in bus_routes.items():
-        if from_stop in stops and to_stop in stops:
-            from_idx = stops.index(from_stop)
-            to_idx = stops.index(to_stop)
-            # Yo'nalishni to'g'irlash
-            if from_idx <= to_idx:
-                path = stops[from_idx:to_idx + 1]
+        stops_n = [normalize_stop(s) for s in stops]
+        if from_n in stops_n and to_n in stops_n:
+            fi = stops_n.index(from_n)
+            ti = stops_n.index(to_n)
+            if fi <= ti:
+                path = stops[fi:ti + 1]
             else:
-                path = stops[to_idx:from_idx + 1]
+                path = stops[ti:fi + 1]
                 path.reverse()
-            time = len(path) * 5 + random.randint(2, 8)
+            time = len(path) * 4 + random.randint(2, 6)
             return path, time, route_num
 
     return None, 0, None
-
-
-def estimate_time(from_stop, to_stop, transport):
-    """Taxminiy vaqt hisoblash"""
-    base_time = random.randint(10, 45)
-    if transport == "metro":
-        return max(5, base_time - 10)
-    elif transport == "marshrutka":
-        return base_time + random.randint(5, 15)
-    return base_time
 
 
 def find_route(city, from_stop, to_stop, transport_pref="all"):
@@ -96,211 +127,199 @@ def find_route(city, from_stop, to_stop, transport_pref="all"):
     if not city_data:
         return "❌ Shahar topilmadi!"
 
+    from_norm = normalize_stop(from_stop)
+    to_norm = normalize_stop(to_stop)
     has_metro = city_data.get("has_metro", False)
     results = []
 
-    # ── Metro yo'li ──────────────────────────────────────────────────
+    # ── Metro ──────────────────────────────────────────────────────────
     if has_metro and transport_pref in ["metro", "all"]:
-        metro_path, metro_time = find_metro_path(from_stop, to_stop)
-
+        metro_path, metro_time = find_metro_path(from_norm, to_norm)
         if metro_path and metro_time > 0:
             stops_count = len(metro_path) - 1
-            path_str = " → ".join(metro_path)
             results.append({
                 "type": "metro",
                 "emoji": "🚇",
                 "label": "Metro",
                 "time": metro_time,
-                "path": path_str,
+                "path": " → ".join(metro_path),
                 "stops": stops_count,
-                "cost": 1400,
-                "detail": f"{stops_count} bekat"
+                "cost": METRO_PRICE,
+                "found": True
             })
         elif transport_pref == "metro":
-            # Metro yo'li topilmasa, taxminiy hisoblash
-            est_time = estimate_time(from_stop, to_stop, "metro")
-            results.append({
-                "type": "metro",
-                "emoji": "🚇",
-                "label": "Metro",
-                "time": est_time,
-                "path": f"{from_stop} → ... → {to_stop}",
-                "stops": random.randint(2, 6),
-                "cost": 1400,
-                "detail": "Taxminiy yo'l"
-            })
+            # Metro bekat topilmadi
+            return (
+                f"❌ <b>Metro bekat topilmadi</b>\n\n"
+                f"<b>{from_stop}</b> yoki <b>{to_stop}</b> metro bekat emas.\n\n"
+                f"📌 <b>Metro bekatlar:</b>\n"
+                f"Chilonzor, Mirzo Ulugbek, Beruniy, Hamza,\n"
+                f"Pakhtakor, Oybek, Kosmonavtlar, Milliy Bog,\n"
+                f"Bunyodkor, Novza, Amir Temur Xiyoboni,\n"
+                f"Pushkin, Mustaqillik, Yunusobod"
+            )
 
-    # ── Avtobus yo'li ─────────────────────────────────────────────────
+    # ── Avtobus ────────────────────────────────────────────────────────
     if transport_pref in ["avtobus", "all"]:
-        bus_path, bus_time, bus_num = find_bus_route(city, from_stop, to_stop)
-
+        bus_path, bus_time, bus_num = find_bus_route(city, from_norm, to_norm)
         if bus_path and bus_time > 0:
-            path_str = " → ".join(bus_path)
             results.append({
                 "type": "avtobus",
                 "emoji": "🚌",
-                "label": f"Avtobus #{bus_num}",
+                "label": "Avtobus #" + str(bus_num),
                 "time": bus_time,
-                "path": path_str,
+                "path": " → ".join(bus_path),
                 "stops": len(bus_path) - 1,
-                "cost": 1400,
-                "detail": f"#{bus_num} avtobus"
+                "cost": BUS_PRICE,
+                "found": True
             })
-        elif transport_pref in ["avtobus", "all"]:
-            # Taxminiy avtobus yo'li
-            est_time = estimate_time(from_stop, to_stop, "avtobus")
-            est_stops = random.randint(3, 8)
-            # Random avtobus raqami
+        else:
+            # Taxminiy avtobus
             bus_routes = city_data.get("bus_routes", {})
             bus_nums = list(bus_routes.keys())
             bus_num = random.choice(bus_nums) if bus_nums else "1"
-
+            est_time = random.randint(15, 40)
+            est_stops = random.randint(3, 8)
             results.append({
                 "type": "avtobus",
                 "emoji": "🚌",
-                "label": f"Avtobus #{bus_num}",
+                "label": "Avtobus #" + str(bus_num),
                 "time": est_time,
-                "path": f"{from_stop} → ... → {to_stop}",
+                "path": from_norm + " → ... → " + to_norm,
                 "stops": est_stops,
-                "cost": 1400,
-                "detail": f"#{bus_num} avtobus"
+                "cost": BUS_PRICE,
+                "found": False
             })
 
-    # ── Marshrutka ───────────────────────────────────────────────────
+    # ── Marshrutka ─────────────────────────────────────────────────────
     if transport_pref in ["marshrutka", "all"]:
-        est_time = estimate_time(from_stop, to_stop, "marshrutka")
-        est_stops = random.randint(3, 10)
+        est_time = random.randint(20, 50)
         results.append({
             "type": "marshrutka",
             "emoji": "🚐",
             "label": "Marshrutka",
             "time": est_time,
-            "path": f"{from_stop} → ... → {to_stop}",
-            "stops": est_stops,
-            "cost": 1500,
-            "detail": "To'g'ridan to'g'ri"
+            "path": from_norm + " → " + to_norm,
+            "stops": random.randint(4, 10),
+            "cost": MARSHRUTKA_PRICE,
+            "found": False
         })
 
-    # ── Natijani formatlash ────────────────────────────────────────────
     if not results:
         return (
-            f"❌ <b>Yo'l topilmadi</b>\n\n"
-            f"📍 <b>{from_stop}</b> → <b>{to_stop}</b>\n\n"
-            f"Iltimos, boshqa transport turini tanlang yoki bekat nomini tekshiring."
+            "❌ <b>Yo'l topilmadi</b>\n\n"
+            "Boshqa transport turini tanlang."
         )
 
-    # Eng tez variant
     best = min(results, key=lambda x: x["time"])
 
-    output = (
-        f"✅ <b>Yo'l topildi!</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━\n"
-        f"📍 <b>{from_stop}</b> → <b>{to_stop}</b>\n"
-        f"🏙 Shahar: <b>{city}</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━\n\n"
+    out = (
+        "✅ <b>Yo'l topildi!</b>\n"
+        "━━━━━━━━━━━━━━━━━━━\n"
+        "<b>" + from_norm + "</b> → <b>" + to_norm + "</b>\n"
+        "🏙 Shahar: <b>" + city + "</b>\n"
+        "━━━━━━━━━━━━━━━━━━━\n\n"
     )
 
-    # Har bir variant
-    for i, route in enumerate(results):
-        is_best = route == best
-        badge = "⚡ <b>ENG TEZ!</b>" if is_best else ""
-        output += (
-            f"{route['emoji']} <b>{route['label']}</b> {badge}\n"
-            f"   ⏱ Vaqt: <b>{route['time']} daqiqa</b>\n"
-            f"   🚏 Bekatlar: <b>{route['stops']} ta</b>\n"
-            f"   💰 Narx: <b>{route['cost']:,} so'm</b>\n"
-            f"   📌 Yo'l: <i>{route['path']}</i>\n\n"
+    for route in results:
+        badge = "⚡ <b>ENG TEZ!</b>" if route == best else ""
+        taxminiy = " <i>(taxminiy)</i>" if not route["found"] else ""
+        out += (
+            route["emoji"] + " <b>" + route["label"] + "</b> " + badge + "\n"
+            "   ⏱ Vaqt: <b>" + str(route["time"]) + " daqiqa</b>" + taxminiy + "\n"
+            "   🚏 Bekatlar: <b>" + str(route["stops"]) + " ta</b>\n"
+            "   💰 Narx: <b>" + str(route["cost"]) + " so'm</b>\n"
+            "   📌 <i>" + route["path"] + "</i>\n\n"
         )
 
-    output += (
-        f"━━━━━━━━━━━━━━━━━━━\n"
-        f"🏆 <b>Tavsiya:</b> {best['emoji']} {best['label']}\n"
-        f"⏱ Atiga <b>{best['time']} daqiqa!</b> 🚀\n\n"
-        f"💡 <i>Yaxshi sayohat!</i> 😊"
+    out += (
+        "━━━━━━━━━━━━━━━━━━━\n"
+        "🏆 <b>Tavsiya:</b> " + best["emoji"] + " " + best["label"] + "\n"
+        "⏱ Atiga <b>" + str(best["time"]) + " daqiqa!</b> 🚀\n\n"
+        "💡 <i>Yaxshi sayohat! 😊</i>"
     )
+    return out
 
-    return output
+
+# Toshkent metro + avtobus bekatlarining real koordinatalari
+METRO_STOPS_COORDS = {
+    "Chilonzor":             (41.2993, 69.2399),
+    "Mirzo Ulugbek":         (41.3063, 69.2563),
+    "Beruniy":               (41.3134, 69.2712),
+    "Hamza":                 (41.3198, 69.2856),
+    "Pakhtakor":             (41.3267, 69.2967),
+    "Oybek":                 (41.3312, 69.3089),
+    "Kosmonavtlar":          (41.3401, 69.3134),
+    "Milliy Bog":            (41.3489, 69.3089),
+    "Bunyodkor":             (41.3556, 69.3023),
+    "Novza":                 (41.3623, 69.2956),
+    "Amir Temur Xiyoboni":   (41.3334, 69.2934),
+    "Pushkin":               (41.3289, 69.2878),
+    "Mustaqillik":           (41.3378, 69.3023),
+    "Yunusobod":             (41.3512, 69.3156),
+}
+
+BUS_STOPS_COORDS = {
+    "Chorsu":                (41.3267, 69.2356),
+    "Shayhontohur":          (41.3134, 69.2712),
+    "Sergeli":               (41.2678, 69.2312),
+    "Yunusobod bozori":      (41.3601, 69.3289),
+    "Olmazor":               (41.3089, 69.2534),
+    "Uchtepa":               (41.2934, 69.2712),
+    "Yakkasaroy":            (41.3023, 69.3067),
+    "Shayxontohur bozori":   (41.3156, 69.2645),
+}
 
 
 def find_nearest_stop(lat, lon):
     """GPS orqali eng yaqin bekatni topish"""
 
-    # Toshkent metro bekatlarining taxminiy koordinatalari
-    METRO_STOPS_COORDS = {
-        "Chilonzor": (41.2995, 69.2401),
-        "Mirzo Ulug'bek": (41.3118, 69.2627),
-        "Beruniy": (41.3234, 69.2789),
-        "Hamza": (41.3367, 69.2934),
-        "Pakhtakor": (41.3445, 69.3067),
-        "Oybek": (41.3512, 69.3201),
-        "Kosmonavtlar": (41.3589, 69.3334),
-        "Milliy Bog'": (41.3634, 69.3456),
-        "Bunyodkor": (41.3556, 69.3589),
-        "Novza": (41.3489, 69.3712),
-        "Amir Temur Xiyoboni": (41.3423, 69.2845),
-        "Mustaqillik": (41.3378, 69.3023),
-        "Yunusobod": (41.3312, 69.3178),
-        "Yunusobod": (41.3512, 69.3401),
-        "Pushkin": (41.3289, 69.2967),
-    }
-
-    # Barcha shaharlardan bekatlar
-    BUS_STOPS_COORDS = {
-        "Chorsu": (41.3289, 69.2345),
-        "Hamza (avtobus)": (41.3367, 69.2934),
-        "Yunusobod bozori": (41.3612, 69.3401),
-        "Sergeli": (41.2678, 69.2312),
-        "Shayhontohur": (41.3134, 69.2712),
-    }
+    # Toshkent koordinatalari oralig'ida emasmi tekshirish
+    # Toshkent: lat 41.1-41.6, lon 69.1-69.5
+    in_tashkent = (41.1 <= lat <= 41.6) and (69.1 <= lon <= 69.5)
 
     def haversine(lat1, lon1, lat2, lon2):
-        R = 6371000  # metr
-        phi1, phi2 = math.radians(lat1), math.radians(lat2)
-        dphi = math.radians(lat2 - lat1)
-        dlambda = math.radians(lon2 - lon1)
-        a = math.sin(dphi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(dlambda/2)**2
+        R = 6371000
+        p1, p2 = math.radians(lat1), math.radians(lat2)
+        dp = math.radians(lat2 - lat1)
+        dl = math.radians(lon2 - lon1)
+        a = math.sin(dp/2)**2 + math.cos(p1)*math.cos(p2)*math.sin(dl/2)**2
         return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
 
-    # Eng yaqin metro bekat
-    nearest_metro = None
-    min_metro_dist = float('inf')
-    for stop, (slat, slon) in METRO_STOPS_COORDS.items():
-        d = haversine(lat, lon, slat, slon)
-        if d < min_metro_dist:
-            min_metro_dist = d
-            nearest_metro = stop
+    if not in_tashkent:
+        return (
+            "⚠️ <b>Siz hozir Toshkentda emassiz!</b>\n\n"
+            "📍 GPS bekat topish faqat <b>Toshkent</b> uchun ishlaydi.\n\n"
+            "Toshkentga kelganingizda joylashuvingizni yuboring! 🚇"
+        )
 
-    # Eng yaqin avtobus bekat
-    nearest_bus = None
-    min_bus_dist = float('inf')
-    for stop, (slat, slon) in BUS_STOPS_COORDS.items():
-        d = haversine(lat, lon, slat, slon)
-        if d < min_bus_dist:
-            min_bus_dist = d
-            nearest_bus = stop
+    nearest_metro = min(METRO_STOPS_COORDS.items(),
+                        key=lambda x: haversine(lat, lon, x[1][0], x[1][1]))
+    nearest_bus = min(BUS_STOPS_COORDS.items(),
+                      key=lambda x: haversine(lat, lon, x[1][0], x[1][1]))
 
-    metro_dist_m = int(min_metro_dist)
-    bus_dist_m = int(min_bus_dist)
-    metro_walk_min = max(1, metro_dist_m // 80)
-    bus_walk_min = max(1, bus_dist_m // 80)
+    metro_dist = int(haversine(lat, lon, nearest_metro[1][0], nearest_metro[1][1]))
+    bus_dist = int(haversine(lat, lon, nearest_bus[1][0], nearest_bus[1][1]))
+    metro_walk = max(1, metro_dist // 80)
+    bus_walk = max(1, bus_dist // 80)
 
     result = (
-        f"📍 <b>Eng yaqin bekatlar topildi!</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━\n\n"
-        f"🚇 <b>Eng yaqin METRO:</b>\n"
-        f"   📌 <b>{nearest_metro}</b>\n"
-        f"   📏 Masofa: <b>{metro_dist_m:,} metr</b>\n"
-        f"   🚶 Piyoda: <b>{metro_walk_min} daqiqa</b>\n\n"
-        f"🚌 <b>Eng yaqin AVTOBUS:</b>\n"
-        f"   📌 <b>{nearest_bus}</b>\n"
-        f"   📏 Masofa: <b>{bus_dist_m:,} metr</b>\n"
-        f"   🚶 Piyoda: <b>{bus_walk_min} daqiqa</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━\n"
+        "📍 <b>Eng yaqin bekatlar topildi!</b>\n"
+        "━━━━━━━━━━━━━━━━━━━\n\n"
+        "🚇 <b>Eng yaqin METRO:</b>\n"
+        "   📌 <b>" + nearest_metro[0] + "</b>\n"
+        "   📏 Masofa: <b>" + str(metro_dist) + " metr</b>\n"
+        "   🚶 Piyoda: <b>" + str(metro_walk) + " daqiqa</b>\n\n"
+        "🚌 <b>Eng yaqin AVTOBUS:</b>\n"
+        "   📌 <b>" + nearest_bus[0] + "</b>\n"
+        "   📏 Masofa: <b>" + str(bus_dist) + " metr</b>\n"
+        "   🚶 Piyoda: <b>" + str(bus_walk) + " daqiqa</b>\n"
+        "━━━━━━━━━━━━━━━━━━━\n"
     )
 
-    if metro_dist_m < bus_dist_m:
-        result += f"💡 <b>Tavsiya:</b> 🚇 Metro yaqinroq! ({metro_walk_min} daqiqa yurish)"
+    if metro_dist < bus_dist:
+        result += "💡 <b>Tavsiya:</b> 🚇 Metro yaqinroq! (" + str(metro_walk) + " daqiqa yurish)"
     else:
-        result += f"💡 <b>Tavsiya:</b> 🚌 Avtobus yaqinroq! ({bus_walk_min} daqiqa yurish)"
+        result += "💡 <b>Tavsiya:</b> 🚌 Avtobus yaqinroq! (" + str(bus_walk) + " daqiqa yurish)"
 
     return result
