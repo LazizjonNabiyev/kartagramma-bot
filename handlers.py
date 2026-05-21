@@ -273,7 +273,7 @@ async def process_plan(message: Message, state: FSMContext):
         f"Karta: <code>8600 0000 0000 0000</code>\n"
         f"Ism: <b>KARTAGRAMMA BOT</b>\n\n"
         f"⚠️ To'lovdan so'ng <b>chekni adminga yuboring</b>\n"
-        f"Admin: @kartagramma_admin\n\n"
+        f"Admin: @Technologeee\n\n"
         f"✅ To'lov qilgandan so'ng tasdiqlang:",
         reply_markup=confirm_kb(),
         parse_mode="HTML"
@@ -295,7 +295,7 @@ async def confirm_payment(message: Message, state: FSMContext):
             f"⏳ <b>To'lovingiz tekshirilmoqda...</b>\n\n"
             f"Admin tasdiqlashi keyin Premium faollashadi.\n"
             f"Odatda <b>1-24 soat</b> ichida.\n\n"
-            f"📩 Chekni yubordingizmi? @kartagramma_admin",
+            f"📩 Chekni yubordingizmi? @Technologeee",
             reply_markup=main_menu_kb(),
             parse_mode="HTML"
         )
